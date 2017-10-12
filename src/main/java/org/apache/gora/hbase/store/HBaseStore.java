@@ -90,6 +90,7 @@ implements Configurable {
 
   private static final int PUTS_AND_DELETES_PUT_TS_OFFSET = 1;
   private static final int PUTS_AND_DELETES_DELETE_TS_OFFSET = 2;
+  private static final String PUTS_AND_DELETES = "gora.hbase.delput";
   
   private volatile Admin admin;
 
@@ -100,6 +101,8 @@ implements Configurable {
   private volatile HBaseMapping mapping;
   
   private HBaseFilterUtil<K, T> filterUtil;
+  
+  private boolean delput;
 
   private int scannerCaching = SCANNER_CACHING_PROPERTIES_DEFAULT ;
   
@@ -151,6 +154,9 @@ implements Configurable {
       createSchema();
     }
     try{
+    	
+    	delput= this.conf.getBoolean(PUTS_AND_DELETES, true);
+    	LOG.info(PUTS_AND_DELETES+":"+delput);
       boolean autoflush = this.conf.getBoolean("hbase.client.autoflush.default", false);
       table = new HBaseTableConnection(getConf(), getSchemaName(), autoflush);
     } catch(IOException ex2){
@@ -263,7 +269,7 @@ implements Configurable {
             field.schema(), hcol, hcol.getQualifier());
       }
 
-      if (delete.size() > 0) {
+      if (delete.size() > 0 && delput) {
         table.delete(delete);
 //        table.delete(delete);
 //        table.delete(delete); // HBase sometimes does not delete arbitrarily
